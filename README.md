@@ -26,6 +26,12 @@ pure UI widget: it never enters the model context.
 ## Install
 
 ```bash
+pi install npm:@lanlance/pi-recap
+```
+
+or via git:
+
+```bash
 pi install git:https://github.com/L2ncE/pi-recap
 ```
 

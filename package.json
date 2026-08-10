@@ -1,7 +1,7 @@
 {
-  "name": "pi-recap",
+  "name": "@lanlance/pi-recap",
   "version": "0.1.0",
-  "description": "Claude Code-style session recap for pi: a one-line recap above the footer that tracks what the session is doing and what to do next",
+  "description": "Claude Code-style session recap for pi: a one-line recap above the status bar that tracks what the session is doing and what to do next",
   "type": "module",
   "license": "Apache-2.0",
   "keywords": [
@@ -20,7 +20,8 @@
   "pi": {
     "extensions": [
       "./extensions/recap.ts"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/L2ncE/pi-recap/main/img/img.png"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
@@ -38,5 +39,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test --experimental-strip-types \"test/*.test.ts\""
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
