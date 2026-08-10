@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="img/logo.svg" alt="pi-recap" width="280"/>
+<img src="https://cdn.jsdelivr.net/gh/L2ncE/pi-recap@main/img/logo.svg" alt="pi-recap" width="280"/>
 
 **A session recap for [pi](https://pi.dev) — one line, always in the know.**
 
@@ -21,7 +21,7 @@ actually changed.
 Inspired by Claude Code's `/recap`, rebuilt natively for pi. The recap is a
 pure UI widget: it never enters the model context.
 
-![pi-recap in action](img/img.png)
+![pi-recap in action](https://cdn.jsdelivr.net/gh/L2ncE/pi-recap@main/img/img.png)
 
 ## Install
 
