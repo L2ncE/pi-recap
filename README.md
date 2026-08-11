@@ -6,10 +6,9 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/L2ncE/pi-recap/actions/workflows/ci.yml/badge.svg)](https://github.com/L2ncE/pi-recap/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 
 </div>
-
----
 
 ## What Is This
 
@@ -101,6 +100,11 @@ agent_end ─► goal (first prompt) + last 3 rounds
 
 Small by design: the input is the session goal plus the last 3 rounds,
 truncated — about 1-2k tokens per call, fractions of a cent.
+
+## Credits
+
+- Inspired by [Claude Code](https://docs.anthropic.com/en/docs/claude-code)'s `/recap` command
+- Special Thanks: [LinuxDO](https://linux.do/)
 
 ## License
 
