@@ -404,7 +404,7 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 		return { kind: "generated" };
 	} catch (error) {
 		reportError("recap", error);
-		return { kind: "skipped", reason: "generation failed" };
+		return { kind: "skipped", reason: `generation failed: ${describeError(error)}` };
 	} finally {
 		isGenerating = false;
 	}
