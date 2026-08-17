@@ -28,14 +28,13 @@ const STATE_KEY = "pi-recap";
 const WIDGET_KEY = "pi-recap";
 const RECAP_PREFIX = "※ recap:";
 
-/** Minimum number of user messages before the recap kicks in. */
+/** Default minimum number of user messages before the recap kicks in (`minTurns`). */
 const MIN_TURNS = 3;
 /** How many most recent user/assistant rounds feed the recap. */
 const MAX_ROUNDS = 3;
-/** Only attempt an automatic recap update every N agent turns. */
+/** Default auto-update cooldown in turns (`cooldownTurns`). */
 const AUTO_UPDATE_COOLDOWN_TURNS = 3;
-/** Word-overlap ratio above which a freshly generated recap is considered
- * unchanged and the displayed one is kept. */
+/** Default word-overlap ratio above which a recap is considered unchanged (`similarityThreshold`). */
 const SIMILARITY_THRESHOLD = 0.7;
 /** Truncation limits for the model input (keeps each call ~1-2k tokens). */
 const GOAL_MAX_CHARS = 200;
@@ -57,6 +56,9 @@ type Settings = {
 	recap?: {
 		model?: string;
 		maxWords?: number;
+		minTurns?: number;
+		cooldownTurns?: number;
+		similarityThreshold?: number;
 		placement?: "above" | "below";
 		prompts?: {
 			recap?: string;
@@ -282,7 +284,25 @@ function mergeSettings(base: Record<string, unknown>, override: Record<string, u
 	return result;
 }
 
-function getRecapConfig(ctx: ExtensionContext): { model: string | undefined; maxWords: number; prompt: string; placement: "aboveEditor" | "belowEditor" } {
+export function positiveInt(value: unknown, fallback: number): number {
+	return typeof value === "number" && Number.isFinite(value) && value >= 1 ? Math.floor(value) : fallback;
+}
+
+export function unitRatio(value: unknown, fallback: number): number {
+	return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1 ? value : fallback;
+}
+
+function getRecapConfig(
+	ctx: ExtensionContext,
+): {
+	model: string | undefined;
+	maxWords: number;
+	minTurns: number;
+	cooldownTurns: number;
+	similarityThreshold: number;
+	prompt: string;
+	placement: "aboveEditor" | "belowEditor";
+} {
 	const globalSettings = readJsonFile(join(getAgentDir(), "settings.json"));
 	const projectSettings = readJsonFile(join(ctx.cwd, ".pi", "settings.json"));
 	const recap = (mergeSettings(globalSettings, projectSettings) as Settings).recap;
@@ -296,6 +316,9 @@ function getRecapConfig(ctx: ExtensionContext): { model: string | undefined; max
 	return {
 		model: recap?.model?.trim() || undefined,
 		maxWords,
+		minTurns: positiveInt(recap?.minTurns, MIN_TURNS),
+		cooldownTurns: positiveInt(recap?.cooldownTurns, AUTO_UPDATE_COOLDOWN_TURNS),
+		similarityThreshold: unitRatio(recap?.similarityThreshold, SIMILARITY_THRESHOLD),
 		prompt: recap?.prompts?.recap?.trim() || DEFAULT_RECAP_PROMPT(maxWords),
 		placement: recap?.placement === "above" ? "aboveEditor" : "belowEditor",
 	};
@@ -338,12 +361,13 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 
 	const { goal, rounds, userCount } = buildSessionContext(ctx);
 	if (!goal || rounds.length === 0) return { kind: "skipped", reason: "no conversation yet" };
-	if (!force && userCount < MIN_TURNS) return { kind: "skipped", reason: "fewer than 3 turns" };
+
+	const config = getRecapConfig(ctx);
+	if (!force && userCount < config.minTurns) return { kind: "skipped", reason: `fewer than ${config.minTurns} turns` };
 
 	const inputKey = buildInputKey(goal, rounds);
 	if (!force && inputKey === lastInputKey) return { kind: "skipped", reason: "input unchanged" };
 
-	const config = getRecapConfig(ctx);
 	const model = pickModel(ctx, config.model);
 	if (!model) return { kind: "skipped", reason: "no usable model" };
 
@@ -351,7 +375,7 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 	// count attempts that actually passed all gates above. Manual (/recap)
 	// runs bypass it.
 	if (!force) {
-		if (agentEndCount - lastAutoUpdateAt < AUTO_UPDATE_COOLDOWN_TURNS) {
+		if (agentEndCount - lastAutoUpdateAt < config.cooldownTurns) {
 			return { kind: "skipped", reason: "cooldown" };
 		}
 		lastAutoUpdateAt = agentEndCount;
@@ -391,7 +415,7 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 		// Similarity gate: if the freshly generated recap says essentially
 		// the same thing as the displayed one, keep the displayed text so
 		// the line stays visually stable across similar turns.
-		if (currentRecap && !force && similarity(currentRecap, recap) >= SIMILARITY_THRESHOLD) {
+		if (currentRecap && !force && similarity(currentRecap, recap) >= config.similarityThreshold) {
 			lastInputKey = inputKey;
 			persistState(pi, { recap: currentRecap, goal: effectiveGoal, inputKey });
 			return { kind: "skipped", reason: "similar to displayed recap" };

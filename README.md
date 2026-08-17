@@ -71,6 +71,9 @@ All optional. Add a `recap` block to `~/.pi/agent/settings.json`
 |--------------|-------------------------|----------------------------------------------------|
 | `model`      | current session model   | `provider/model` used for generation               |
 | `maxWords`   | `25`                    | word budget; prompt and truncation follow it       |
+| `minTurns`   | `3`                     | user messages required before auto-generation starts |
+| `cooldownTurns` | `3`                  | regenerate only every N `agent_end` turns; `1` = every turn |
+| `similarityThreshold` | `0.7`        | fresh recap with ≥ this word overlap keeps the displayed one |
 | `placement`  | `"below"`               | `"below"` = between editor and status bar, `"above"` = above the editor |
 | `prompts.recap` | built-in             | custom system prompt, replaces the built-in one    |
 
@@ -90,11 +93,11 @@ array of `settings.json`. Disable its last-prompt echo with
 ```
 agent_end ─► goal (first prompt) + last 3 rounds
               │
-              ├─ ≥ 3 turns?       (else skip)
-              ├─ cooldown 3 turns (else skip)
+              ├─ ≥ minTurns turns?  (else skip)
+              ├─ cooldown cooldownTurns (else skip)
               ├─ latest-round key changed? (else skip)
               ├─ generate (≤256 tokens, minimal reasoning)
-              ├─ similar to shown? (≥70% word overlap → keep shown)
+              ├─ similar to shown? (≥ similarityThreshold overlap → keep shown)
               └─ render widget + persist
 ```
 

@@ -7,7 +7,9 @@ import {
 	cleanSingleLine,
 	isWideChar,
 	limitWords,
+	positiveInt,
 	similarity,
+	unitRatio,
 	wrapText,
 } from "../extensions/recap.ts";
 
@@ -78,6 +80,24 @@ test("similarity is symmetric Jaccard overlap", () => {
 	// drops content is not suppressed.
 	assert.equal(similarity("a b", "a b c"), 2 / 3);
 	assert.equal(similarity("", "a b"), 0);
+});
+
+test("positiveInt floors valid values, falls back otherwise", () => {
+	assert.equal(positiveInt(1, 3), 1);
+	assert.equal(positiveInt(2.9, 3), 2);
+	assert.equal(positiveInt(0, 3), 3);
+	assert.equal(positiveInt(-1, 3), 3);
+	assert.equal(positiveInt(Number.NaN, 3), 3);
+	assert.equal(positiveInt("2", 3), 3);
+});
+
+test("unitRatio accepts [0,1] values, falls back otherwise", () => {
+	assert.equal(unitRatio(0, 0.7), 0);
+	assert.equal(unitRatio(0.5, 0.7), 0.5);
+	assert.equal(unitRatio(1, 0.7), 1);
+	assert.equal(unitRatio(1.5, 0.7), 0.7);
+	assert.equal(unitRatio(-0.1, 0.7), 0.7);
+	assert.equal(unitRatio(Number.NaN, 0.7), 0.7);
 });
 
 test("buildInputKey joins goal and last round", () => {
