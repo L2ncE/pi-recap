@@ -1,7 +1,7 @@
 {
   "name": "@lanlance/pi-recap",
-  "version": "0.2.0",
-  "description": "Claude Code-style session recap for pi: a one-line recap above the status bar that tracks what the session is doing and what to do next",
+  "version": "0.3.0",
+  "description": "Claude Code-style session recap for pi: a one-line recap above the status bar tracking the session goal and current state",
   "type": "module",
   "license": "Apache-2.0",
   "keywords": [

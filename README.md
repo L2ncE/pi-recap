@@ -13,9 +13,8 @@
 ## What Is This
 
 pi-recap shows a single status line above the status bar that answers
-*"where was I?"* — the session goal, the current state, and the one next
-action. It updates automatically as you work, and stays put when nothing
-actually changed.
+*"where was I?"* — the session goal and the current state. It updates
+automatically as you work, and stays put when nothing actually changed.
 
 Inspired by Claude Code's `/recap`, rebuilt natively for pi. The recap is a
 pure UI widget: it never enters the model context.
@@ -42,7 +41,7 @@ or drop `extensions/recap.ts` into `~/.pi/agent/extensions/` and run
 Nothing to do — after 3 turns the recap appears on its own.
 
 ```
-※ recap: Memoized Fibonacci script with CLI args; README next
+※ recap: Memoized Fibonacci script with CLI args; README updated
 ```
 
 * `/recap` — regenerate the recap right now
@@ -61,7 +60,7 @@ All optional. Add a `recap` block to `~/.pi/agent/settings.json`
     "maxWords": 25,
     "placement": "above",
     "prompts": {
-      "recap": "Output only one phrase, at most 25 words."
+      "recap": "Output only one phrase, at most 40 words."
     }
   }
 }
@@ -70,7 +69,7 @@ All optional. Add a `recap` block to `~/.pi/agent/settings.json`
 | key          | default                 | description                                        |
 |--------------|-------------------------|----------------------------------------------------|
 | `model`      | current session model   | `provider/model` used for generation               |
-| `maxWords`   | `25`                    | word budget; prompt and truncation follow it       |
+| `maxWords`   | `40`                    | word budget; prompt and truncation follow it       |
 | `minTurns`   | `3`                     | user messages required before auto-generation starts |
 | `cooldownTurns` | `3`                  | regenerate only every N `agent_end` turns; `1` = every turn |
 | `similarityThreshold` | `0.7`        | fresh recap with ≥ this word overlap keeps the displayed one |
@@ -96,7 +95,7 @@ agent_end ─► goal (first prompt) + last 3 rounds
               ├─ ≥ minTurns turns?  (else skip)
               ├─ cooldown cooldownTurns (else skip)
               ├─ latest-round key changed? (else skip)
-              ├─ generate (≤256 tokens, minimal reasoning)
+              ├─ generate (≤512 tokens, minimal reasoning)
               ├─ similar to shown? (≥ similarityThreshold overlap → keep shown)
               └─ render widget + persist
 ```

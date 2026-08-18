@@ -8,7 +8,7 @@ import type { CustomEntry, ExtensionAPI, ExtensionContext, SessionEntry } from "
  * Shows a one-line recap of the current session state above the footer
  * (the line between the input editor and the status bar), like this:
  *
- *   ※ recap: Building a pi extension that summarizes sessions, next up: widget rendering
+ *   ※ recap: Building a pi extension that summarizes sessions; widget rendering in progress
  *
  * The recap is generated from the session goal (first user prompt) plus the
  * most recent rounds of activity, so it stays stable across turns and only
@@ -41,16 +41,10 @@ const GOAL_MAX_CHARS = 200;
 const USER_MAX_CHARS = 200;
 const ASSISTANT_MAX_CHARS = 300;
 
-const DEFAULT_MAX_WORDS = 25;
+const DEFAULT_MAX_WORDS = 40;
 
 const DEFAULT_RECAP_PROMPT = (maxWords: number) =>
-	[
-		`The user is returning to the terminal. Recap in under ${maxWords} words, 1-2 plain sentences, no markdown, no headings — just the status line itself.`,
-		"Focus on the concrete capability, decision, or result.",
-		"End with the single thing up next.",
-		"Describe the session from an outside view. Do not address the user, answer their last question, or review the conversation.",
-		"Skip root-cause narrative, fix internals, secondary to-dos, and em-dash tangents.",
-	].join("\n");
+	`The user stepped away and is coming back. Recap in under ${maxWords} words, 1-2 plain sentences, no markdown. Lead with the overall goal and current task. Skip root-cause narrative, fix internals, secondary to-dos, and em-dash tangents.`;
 
 type Settings = {
 	recap?: {
@@ -400,7 +394,7 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 				],
 			},
 			{
-				maxTokens: 256,
+				maxTokens: 512,
 				// Only honored by OpenAI-family adapters (covers deepseek et al.);
 				// other adapter families silently ignore it.
 				reasoningEffort: "minimal",
@@ -408,6 +402,10 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 				signal: ctx.signal,
 			},
 		);
+
+		// A length-capped response is mid-sentence garbage (thinking eats the
+		// budget); keep the previous recap and retry after the cooldown.
+		if (response.stopReason === "length") return { kind: "skipped", reason: "output truncated" };
 
 		const recap = cleanSingleLine(extractText(response.content));
 		if (!recap) return { kind: "skipped", reason: "empty model output" };
