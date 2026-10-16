@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { clampThinkingLevel } from "@earendil-works/pi-ai";
 import type { CustomEntry, ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 
 /**
@@ -381,6 +382,7 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 
 	isGenerating = true;
 	try {
+		const reasoning = clampThinkingLevel(model, "minimal");
 		const response = await ctx.modelRegistry.complete(
 			model,
 			{
@@ -395,13 +397,18 @@ async function generateRecap(pi: ExtensionAPI, ctx: ExtensionContext, force: boo
 			},
 			{
 				maxTokens: 512,
-				// Only honored by OpenAI-family adapters (covers deepseek et al.);
-				// other adapter families silently ignore it.
-				reasoningEffort: "minimal",
+				// OpenAI-family adapters require an effort supported by the model.
+				reasoningEffort: reasoning === "off" ? undefined : reasoning,
 				cacheRetention: "none",
 				signal: ctx.signal,
 			},
 		);
+
+		// Provider errors may resolve with partial/empty content rather than throw.
+		if (response.stopReason === "error") {
+			return { kind: "skipped", reason: `model request failed (${model.provider}/${model.id})` };
+		}
+		if (response.stopReason === "aborted") return { kind: "skipped", reason: "generation aborted" };
 
 		// A length-capped response is mid-sentence garbage (thinking eats the
 		// budget); keep the previous recap and retry after the cooldown.

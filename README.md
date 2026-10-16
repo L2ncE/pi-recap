@@ -95,13 +95,25 @@ agent_end ─► goal (first prompt) + last 3 rounds
               ├─ ≥ minTurns turns?  (else skip)
               ├─ cooldown cooldownTurns (else skip)
               ├─ latest-round key changed? (else skip)
-              ├─ generate (≤512 tokens, minimal reasoning)
+              ├─ generate (≤512 tokens, model-supported reasoning)
               ├─ similar to shown? (≥ similarityThreshold overlap → keep shown)
               └─ render widget + persist
 ```
 
 Small by design: the input is the session goal plus the last 3 rounds,
 truncated — about 1-2k tokens per call, fractions of a cent.
+
+Before calling the provider, pi-recap uses pi's `clampThinkingLevel()` helper to
+adapt the requested `minimal` effort to the selected model's supported levels.
+For example, an OpenAI-family model whose lowest supported level is `low`
+receives `low` rather than an unsupported `minimal` value. Models without
+reasoning support receive no effort override. The configured model,
+session-model fallback, and other providers' existing behavior are unchanged.
+
+Failed or aborted responses keep the previous recap, even if the provider returns
+partial text. `/recap` reports `model request failed (provider/model)` or
+`generation aborted` instead of treating these responses as empty output.
+Provider error bodies are not included in these notifications.
 
 ## Credits
 
